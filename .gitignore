@@ -1,0 +1,6 @@
+# Compiled source #
+###################
+*.class
+*.o
+*.so
+*.apk
