@@ -8,7 +8,8 @@ include $(CLEAR_VARS)
 LOCAL_MODULE    := librkapp
 
 LOCAL_SRC_FILES := \
-	librkapp/librkapp.c
+	librkapp/rkapp_hello_jni.c \
+	librkapp/rkapp_main.cpp
 
 LOCAL_SRC_FILES+= \
 	libusb/libusb/core.c \
@@ -16,12 +17,22 @@ LOCAL_SRC_FILES+= \
 	libusb/libusb/io.c \
 	libusb/libusb/sync.c \
 	libusb/libusb/os/linux_usbfs.c
+	
+LOCAL_SRC_FILES+= \
+	libfreenect/audio.c \
+	libfreenect/cameras.c \
+	libfreenect/core.c \
+	libfreenect/loader.c \
+	libfreenect/registration.c \
+	libfreenect/tilt.c \
+	libfreenect/usb_libusb10.c
 
 LOCAL_C_INCLUDES += $(LOCAL_PATH)/libusb/android \
 	$(LOCAL_PATH)/libusb/libusb \
-	$(LOCAL_PATH)/libusb/libusb/os 
+	$(LOCAL_PATH)/libusb/libusb/os \
+	$(LOCAL_PATH)/libfreenect
 
-LOCAL_LDLIBS := -llog 
+LOCAL_LDLIBS := -llog -lstdc++ -lc -lm -ldl -landroid
 
 
 LOCAL_ALLOW_UNDEFINED_SYMBOLS := true
