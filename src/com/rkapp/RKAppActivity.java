@@ -15,6 +15,7 @@ import android.hardware.usb.UsbInterface;
 import android.hardware.usb.UsbManager;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
@@ -28,7 +29,7 @@ public class RKAppActivity extends Activity {
 	    {
 	        super.onCreate(savedInstanceState);
 
-	        /* Create a TextView and set its content.
+	        /* Create a Button and set its content.
 	         * the text is retrieved by calling a native
 	         * function.
 	         */
@@ -38,37 +39,31 @@ public class RKAppActivity extends Activity {
 	            
 	            @Override
 	            public void onClick(View v) {
-	                UsbManager manager = (UsbManager) getSystemService(Context.USB_SERVICE);
-	                HashMap<String, UsbDevice> deviceList = manager.getDeviceList();
-	                Iterator<UsbDevice> deviceIterator  = deviceList.values().iterator();
-
-	                while(deviceIterator.hasNext()) {
-	                    UsbDevice device = deviceIterator.next();
-	                    Log.d(TAG, "device ID: " + device.getDeviceId());
-	                    Log.d(TAG, "device NAME: " + device.getDeviceName());
-	                    Log.d(TAG, "device string: " + device.toString());
-
-	                    if ( device.getProductId() == 688 ) {
-	                    	Log.d(TAG, "requesting permission for productID 688");
-	                    	PendingIntent mPermissionIntent = PendingIntent.getBroadcast(v.getContext(), 0, new Intent(ACTION_USB_PERMISSION), 0);
-	                    	IntentFilter filter = new IntentFilter(ACTION_USB_PERMISSION);
-	                    	registerReceiver(mUsbReceiver, filter);
-	                    	
-	                    	manager.requestPermission(device, mPermissionIntent);
-	                    }
-	                }
+	            	showConnectionRequest();
 	            }
 	        });
 	        setContentView(button);
+	        
+	        
 	    }
 
 	    /* A native method that is implemented by the
-	     * 'hello-jni' native library, which is packaged
+	     * 'librkapp.c' native library, which is packaged
 	     * with this application.
 	     */
 	    public native String  stringFromJNI();
 	    private native void openUsb(int fd);
 	    
+	    
+	    /* A native method that is implemented by the
+	     * 'rkapp_main.cpp' native library, which is packaged
+	     * with this application.
+	     */
+	    public native void  init();
+	    private native void keyEvent(int action, int unicodeChar, int keyCode,
+				KeyEvent event);
+	    public native void cleanup();
+
 
 	    /* this is used to load the 'hello-jni' library on application
 	     * startup. The library has already been unpacked into
@@ -109,5 +104,28 @@ public class RKAppActivity extends Activity {
 	        }
 	    };
 
+	    
+	private void showConnectionRequest(){
+		UsbManager manager = (UsbManager) getSystemService(Context.USB_SERVICE);
+	    HashMap<String, UsbDevice> deviceList = manager.getDeviceList();
+	    Iterator<UsbDevice> deviceIterator  = deviceList.values().iterator();
+	
+	    while(deviceIterator.hasNext()) {
+	        UsbDevice device = deviceIterator.next();
+	        Log.d(TAG, "device ID: " + device.getDeviceId());
+	        Log.d(TAG, "device NAME: " + device.getDeviceName());
+	        Log.d(TAG, "device string: " + device.toString());
+	
+	        if ( device.getProductId() == 688 ) {
+	        	Log.d(TAG, "requesting permission for productID 688");
+	        	PendingIntent mPermissionIntent =
+	        			PendingIntent.getBroadcast(RKAppActivity.this, 0, new Intent(ACTION_USB_PERMISSION), 0);
+	        	IntentFilter filter = new IntentFilter(ACTION_USB_PERMISSION);
+	        	registerReceiver(mUsbReceiver, filter);
+	        	
+	        	manager.requestPermission(device, mPermissionIntent);
+	        }
+	    }
+	}
 
 }
