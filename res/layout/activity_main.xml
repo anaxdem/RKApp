@@ -4,11 +4,45 @@
     android:layout_height="match_parent"
     tools:context=".RKAppActivity" >
 
-    <TextView
+    <ToggleButton
+        android:id="@+id/tglLed"
+        android:layout_width="50dip"
+        android:layout_height="50dip"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:layout_margin="15dip"
+        android:background="@drawable/color_led_selector"
+        android:text=""
+        android:textOff=""
+        android:textOn="" />
+
+    <Button
+        android:id="@+id/btn_sync_device"
+        style="@style/Button"
+        android:layout_width="200dip"
+        android:layout_height="50dip"
+        android:layout_alignParentBottom="true"
+        android:layout_toLeftOf="@+id/tglLed"
+       android:layout_margin="15dip"
+        android:text="Sync Device" />
+
+    <EditText
+        android:id="@+id/edit"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
-        android:layout_centerVertical="true"
-        android:text="@string/hello_world" />
+        android:layout_above="@+id/tglLed"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true"
+        android:ems="10" 
+        android:editable="false"
+        android:textColor="#000"
+        android:textSize="12sp"
+        android:fadeScrollbars="true"
+        
+        >
+
+        <requestFocus />
+    </EditText>
 
 </RelativeLayout>

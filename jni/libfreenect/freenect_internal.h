@@ -74,6 +74,8 @@ void fn_log(freenect_context *ctx, freenect_loglevel level, const char *fmt, ...
 void fn_log(freenect_context *ctx, freenect_loglevel level, const char *fmt, ...) __attribute__ ((format (printf, 3, 4)));
 #endif
 
+#define TAG  "RKApp"
+
 #define FN_LOG(level, ...) fn_log(ctx, level, __VA_ARGS__)
 
 #define FN_FATAL(...) FN_LOG(LL_FATAL, __VA_ARGS__)

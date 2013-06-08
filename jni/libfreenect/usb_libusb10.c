@@ -33,6 +33,8 @@
 #include "freenect_internal.h"
 #include "loader.h"
 
+#include <android/log.h>
+
 FN_INTERNAL int fnusb_num_devices(fnusb_ctx *ctx)
 {
 	libusb_device **devs; 
@@ -196,6 +198,7 @@ FN_INTERNAL int fnusb_open_subdevices(freenect_device *dev, int index)
 			if (nr_cam == index) {
 				res = libusb_open (devs[i], &dev->usb_cam.dev);
 				if (res < 0 || !dev->usb_cam.dev) {
+					__android_log_print(4, "RKApp", "Could not open camera:%d\n", res);
 					FN_ERROR("Could not open camera: %d\n", res);
 					dev->usb_cam.dev = NULL;
 					break;
@@ -206,6 +209,7 @@ FN_INTERNAL int fnusb_open_subdevices(freenect_device *dev, int index)
 				if (res == 1) {
 					res = libusb_detach_kernel_driver(dev->usb_cam.dev, 0);
 					if (res < 0) {
+						__android_log_print(4, "RKApp", "Could not detach kernel driver for camera:", res);
 						FN_ERROR("Could not detach kernel driver for camera: %d\n", res);
 						libusb_close(dev->usb_cam.dev);
 						dev->usb_cam.dev = NULL;
@@ -215,6 +219,7 @@ FN_INTERNAL int fnusb_open_subdevices(freenect_device *dev, int index)
 #endif
 				res = libusb_claim_interface (dev->usb_cam.dev, 0);
 				if (res < 0) {
+					__android_log_print(4, "RKApp", "Could not claim interface on camera: %d\n", res);
 					FN_ERROR("Could not claim interface on camera: %d\n", res);
 					libusb_close(dev->usb_cam.dev);
 					dev->usb_cam.dev = NULL;
@@ -231,12 +236,14 @@ FN_INTERNAL int fnusb_open_subdevices(freenect_device *dev, int index)
 			if (nr_mot == index) {
 				res = libusb_open (devs[i], &dev->usb_motor.dev);
 				if (res < 0 || !dev->usb_motor.dev) {
+					__android_log_print(4, "RKApp", "Could not open motor: %d\n", res);
 					FN_ERROR("Could not open motor: %d\n", res);
 					dev->usb_motor.dev = NULL;
 					break;
 				}
 				res = libusb_claim_interface (dev->usb_motor.dev, 0);
 				if (res < 0) {
+					__android_log_print(4, "RKApp", "Could not claim interface on motor: %d\n", res);
 					FN_ERROR("Could not claim interface on motor: %d\n", res);
 					libusb_close(dev->usb_motor.dev);
 					dev->usb_motor.dev = NULL;
