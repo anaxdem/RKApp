@@ -19,12 +19,8 @@ public class JNICaller implements JNIListener{
 		mDelegateListener = delegate;
 	}
 
-	public native boolean init();
-
-	public native boolean keyEvent(int action, int unicodeChar, int keyCode,
-			KeyEvent event);
-
-	public native void cleanup();
+	public native boolean initializeWorker();
+	public native void finalizeWorker();
 
 	public native boolean openSync();
 
@@ -34,10 +30,10 @@ public class JNICaller implements JNIListener{
 
 
 	@Override
-	public void onCleanupEnd(final boolean res) {
+	public void onFinalizeEnd(final boolean res) {
 		mHandler.post(new Runnable() {
 			public void run() {
-				mDelegateListener.onCleanupEnd(res);
+				mDelegateListener.onFinalizeEnd(res);
 			}
 		});		
 	}

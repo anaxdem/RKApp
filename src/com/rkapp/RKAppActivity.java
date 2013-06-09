@@ -8,7 +8,6 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.view.View;
-import android.view.MotionEvent.PointerCoords;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 import android.widget.EditText;
@@ -74,11 +73,11 @@ public class RKAppActivity extends Activity {
 	  
 		protected boolean systemInit(){			
 			mJNICaller = new JNICaller(mJNIListener) ;			
-			return mJNICaller.init();
+			return mJNICaller.initializeWorker();
 		}
 	 
 		public void onBackPressed() {				
-				mJNICaller.cleanup();
+				mJNICaller.finalizeWorker();
 		};
 			
 
@@ -116,7 +115,6 @@ public class RKAppActivity extends Activity {
 			
 			@Override
 			public void onNewFrame() {
-				// TODO Auto-generated method stub
 				
 			}
 			
@@ -126,7 +124,7 @@ public class RKAppActivity extends Activity {
 			}
 			
 			@Override
-			public void onCleanupEnd(boolean res) {
+			public void onFinalizeEnd(boolean res) {
 			 if (res){
 				 finish();
 			 }

@@ -39,7 +39,7 @@
         android:textColor="#000"
         android:textSize="12sp"
         android:fadeScrollbars="true"
-        
+        android:gravity="top"
         >
 
         <requestFocus />

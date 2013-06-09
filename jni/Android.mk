@@ -7,8 +7,8 @@ LOCAL_MODULE    := librkapp
 #Подключаемые файлы с исходным кодом
 #Файлы обработчики
 LOCAL_SRC_FILES := \
-	librkapp/rkapp_main.cpp \
-	librkapp/com_rkapp_JNICaller.cpp
+	librkapp/rkapp_worker.c \
+	librkapp/com_rkapp_JNICaller.c
 #Исходные коды библотеки libusb
 LOCAL_SRC_FILES+= libusb/libusb/core.c libusb/libusb/descriptor.c \
 	libusb/libusb/io.c libusb/libusb/sync.c \
