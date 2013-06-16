@@ -75,6 +75,8 @@ FREENECTAPI int freenect_shutdown(freenect_context *ctx)
 }
 
 FREENECTAPI int freenect_process_events(freenect_context *ctx)
+
+
 {
 	struct timeval timeout;
 	timeout.tv_sec = 60;
@@ -84,11 +86,13 @@ FREENECTAPI int freenect_process_events(freenect_context *ctx)
 
 FREENECTAPI int freenect_process_events_timeout(freenect_context *ctx, struct timeval *timeout)
 {
+
 	int res = fnusb_process_events_timeout(&ctx->usb, timeout);
 	// Iterate over the devices in ctx.  If any of them are flagged as
 	freenect_device* dev = ctx->first;
 	while(dev) {
 		if (dev->usb_cam.device_dead) {
+			__android_log_print(ANDROID_LOG_ERROR, LOG_TAG,"USB camera marked dead, stopping streams" );
 			FN_ERROR("USB camera marked dead, stopping streams\n");
 			res = -1;
 			freenect_stop_video(dev);
@@ -96,6 +100,7 @@ FREENECTAPI int freenect_process_events_timeout(freenect_context *ctx, struct ti
 		}
 #ifdef BUILD_AUDIO
 		if (dev->usb_audio.device_dead) {
+			__android_log_print(ANDROID_LOG_ERROR, LOG_TAG,"USB audio marked dead, stopping streams" );
 			FN_ERROR("USB audio marked dead, stopping streams\n");
 			res = -1; // Or something else to tell the user that the device just vanished.
 			freenect_stop_audio(dev);
@@ -103,6 +108,7 @@ FREENECTAPI int freenect_process_events_timeout(freenect_context *ctx, struct ti
 #endif
 		dev = dev->next;
 	}
+
 	return res;
 }
 

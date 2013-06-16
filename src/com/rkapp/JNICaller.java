@@ -56,5 +56,11 @@ public class JNICaller implements JNIListener{
 		});
 		
 	}
+
+	@Override
+	public void onMassageByte(char[] msg) {
+		mDelegateListener.onMassageByte(msg);
+		
+	}
 	
 }

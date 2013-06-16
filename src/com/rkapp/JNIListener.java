@@ -6,6 +6,8 @@ public interface JNIListener {
 	
 	public void onMassage(String msg);
 	
+	public void onMassageByte(char[] msg) ;
+	
 	public void onNewFrame();
 
 }

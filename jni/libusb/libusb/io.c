@@ -32,6 +32,8 @@
 
 #include "libusbi.h"
 
+
+#include <android/log.h>
 /**
  * \page io Synchronous and asynchronous device I/O
  *
@@ -1467,19 +1469,25 @@ API_EXPORTED int libusb_wait_for_event(libusb_context *ctx, struct timeval *tv)
 
 static void handle_timeout(struct usbi_transfer *itransfer)
 {
+	__android_log_print(ANDROID_LOG_DEBUG, "RKApp","io.c -> enter handle_timeout");
 	struct libusb_transfer *transfer =
 		__USBI_TRANSFER_TO_LIBUSB_TRANSFER(itransfer);
 	int r;
 
 	itransfer->flags |= USBI_TRANSFER_TIMED_OUT;
 	r = libusb_cancel_transfer(transfer);
-	if (r < 0)
+	if (r < 0){
 		usbi_warn(TRANSFER_CTX(transfer),
 			"async cancel failed %d errno=%d", r, errno);
+		__android_log_print(ANDROID_LOG_ERROR, "RKApp","io.c ->handle_timeout   async cancel failed %d errno=%d", r, errno);
+	}
 }
 
 static int handle_timeouts(struct libusb_context *ctx)
 {
+
+	__android_log_print(ANDROID_LOG_DEBUG, "RKApp","io.c -> enter handle_timeouts" );
+
 	struct timespec systime_ts;
 	struct timeval systime;
 	struct usbi_transfer *transfer;
@@ -1487,19 +1495,25 @@ static int handle_timeouts(struct libusb_context *ctx)
 
 	USBI_GET_CONTEXT(ctx);
 	pthread_mutex_lock(&ctx->flying_transfers_lock);
-	if (list_empty(&ctx->flying_transfers))
+	if (list_empty(&ctx->flying_transfers)){
+		__android_log_print(ANDROID_LOG_DEBUG, "RKApp","io.c -> handle_timeouts -> list_empty" );
 		goto out;
+	}
 
 	/* get current time */
 	r = clock_gettime(CLOCK_MONOTONIC, &systime_ts);
-	if (r < 0)
+	if (r < 0){
+		__android_log_print(ANDROID_LOG_DEBUG, "RKApp","io.c -> handle_timeouts -> clock_gettime <0" );
 		goto out;
+	}
 
 	TIMESPEC_TO_TIMEVAL(&systime, &systime_ts);
 
 	/* iterate through flying transfers list, finding all transfers that
 	 * have expired timeouts */
 	list_for_each_entry(transfer, &ctx->flying_transfers, list) {
+		__android_log_print(ANDROID_LOG_DEBUG, "RKApp","io.c -> handle_timeouts ->  list_for_each_entry" );
+
 		struct timeval *cur_tv = &transfer->timeout;
 
 		/* if we've reached transfers of infinite timeout, we're all done */
@@ -1517,11 +1531,14 @@ static int handle_timeouts(struct libusb_context *ctx)
 			goto out;
 	
 		/* otherwise, we've got an expired timeout to handle */
+		__android_log_print(ANDROID_LOG_DEBUG, "RKApp","io.c -> handle_timeouts ->  otherwise, we've got an expired timeout to handle" );
+
 		handle_timeout(transfer);
 	}
 
 out:
 	pthread_mutex_unlock(&ctx->flying_transfers_lock);
+	__android_log_print(ANDROID_LOG_DEBUG, "RKApp","io.c -> handle_timeouts -> return %d", r );
 	return r;
 }
 
@@ -1650,11 +1667,14 @@ static int get_next_timeout(libusb_context *ctx, struct timeval *tv,
 API_EXPORTED int libusb_handle_events_timeout(libusb_context *ctx,
 	struct timeval *tv)
 {
+
+	//__android_log_print(ANDROID_LOG_DEBUG, "RKApp","io.c -> enter libusb_handle_events_timeout" );
 	int r;
 	struct timeval poll_timeout;
 
 	USBI_GET_CONTEXT(ctx);
 	r = get_next_timeout(ctx, tv, &poll_timeout);
+	//__android_log_print(ANDROID_LOG_DEBUG, "RKApp","io.c -> get_next_timeout = %d", r );
 	if (r) {
 		/* timeout already expired */
 		return handle_timeouts(ctx);

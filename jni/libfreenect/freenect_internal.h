@@ -32,7 +32,7 @@
 
 #include "libfreenect.h"
 #include "libfreenect-registration.h"
-
+#include <android/log.h>
 #ifdef BUILD_AUDIO
 #include "libfreenect-audio.h"
 #endif
@@ -74,7 +74,7 @@ void fn_log(freenect_context *ctx, freenect_loglevel level, const char *fmt, ...
 void fn_log(freenect_context *ctx, freenect_loglevel level, const char *fmt, ...) __attribute__ ((format (printf, 3, 4)));
 #endif
 
-#define TAG  "RKApp"
+#define LOG_TAG  "RKApp"
 
 #define FN_LOG(level, ...) fn_log(ctx, level, __VA_ARGS__)
 

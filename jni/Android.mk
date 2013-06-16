@@ -24,7 +24,7 @@ LOCAL_C_INCLUDES += $(LOCAL_PATH)/libusb/android  $(LOCAL_PATH)/libusb/libusb \
 	$(LOCAL_PATH)/libusb/libusb/os 	$(LOCAL_PATH)/libfreenect \
 	$(LOCAL_PATH)/librkapp
 #Дополнительные системные библиотеки. используемые для работы	
-LOCAL_LDLIBS := -llog -lstdc++ -lc -lm -ldl -landroid  
+LOCAL_LDLIBS := -llog -lstdc++ -lc -lm -ldl -landroid  -lGLESv2  -lEGL 
 
 LOCAL_ALLOW_UNDEFINED_SYMBOLS := true
 include $(BUILD_SHARED_LIBRARY)
