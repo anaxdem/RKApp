@@ -10,13 +10,11 @@ jint JNI_OnLoad(JavaVM* vm, void *reserved) {
 		return -1;
 	}
 
-
 	return JNI_VERSION_1_4;
 }
 
-
-JNIEXPORT jboolean JNICALL Java_com_rkapp_JNICaller_initializeWorker(JNIEnv *env,
-		jobject this) {
+JNIEXPORT jboolean JNICALL Java_com_rkapp_JNICaller_initializeWorker(
+		JNIEnv *env, jobject this) {
 	return initializeWorker(env, this, mGlobalJavaVM);
 }
 
@@ -44,5 +42,23 @@ JNIEXPORT void JNICALL Java_com_rkapp_JNICaller_setFilePath(JNIEnv *env,
 		jobject this, jstring path) {
 
 	setPathToFile(env, path);
+}
+
+JNIEXPORT void JNICALL Java_com_rkapp_JNICaller_titlDown(JNIEnv* env, jobject this) {
+	titlDown();
+}
+
+JNIEXPORT void JNICALL Java_com_rkapp_JNICaller_tiltUP(JNIEnv * env, jobject this) {
+	tiltUP();
+}
+
+JNIEXPORT void JNICALL Java_com_rkapp_JNICaller_setSizeToWrite(JNIEnv* env,
+		jobject this, jint size) {
+	setSizeToWrite(size);
+}
+
+JNIEXPORT void JNICALL Java_com_rkapp_JNICaller_setFileWritable(JNIEnv* env,
+		jobject this, jint writable) {
+	setFileWritable(writable);
 }
 

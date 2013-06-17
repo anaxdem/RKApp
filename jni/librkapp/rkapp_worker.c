@@ -38,6 +38,9 @@ jmethodID MethodOnMassageByte;
 
 const char* pathToFile;
 
+pthread_cond_t pth_frame_cond = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t pth_backbuf_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 //Kinect part variables
 pthread_t freenect_thread;
 volatile int die = 0;
@@ -47,14 +50,12 @@ freenect_device *f_dev;
 
 char my_log[512];
 
-pthread_cond_t gl_frame_cond = PTHREAD_COND_INITIALIZER;
-pthread_mutex_t gl_backbuf_mutex = PTHREAD_MUTEX_INITIALIZER;
-
 int got_rgb = 0;
 int got_depth = 0;
+static int got_new_frame = 0;
 
-int freenect_angle = 0;
-int freenect_led;
+int current_tilt_angle = 0;
+freenect_led_options current_led_option = LED_RED;
 
 uint16_t t_gamma[2048];
 
@@ -64,9 +65,8 @@ uint8_t *rgb_back, *rgb_mid, *rgb_front;
 freenect_video_format requested_format = FREENECT_VIDEO_RGB;
 freenect_video_format current_format = FREENECT_VIDEO_RGB;
 
-freenect_led_options current_led_option = LED_RED;
-
-static int got_new_frame = 0;
+int current_size_to_write = 500;
+int need_write = 1;
 
 static JNIEnv* getJniEnv() {
 	JavaVMAttachArgs attachArgs;
@@ -123,21 +123,21 @@ void sendByteArrayToJava(JNIEnv *env, void* msg) {
 
 int new_frame() {
 	__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, "new_frame ");
-	pthread_mutex_lock(&gl_backbuf_mutex);
+	pthread_mutex_lock(&pth_backbuf_mutex);
 	return got_new_frame;
-	pthread_cond_signal(&gl_frame_cond);
-	pthread_mutex_unlock(&gl_backbuf_mutex);
+	pthread_cond_signal(&pth_frame_cond);
+	pthread_mutex_unlock(&pth_backbuf_mutex);
 }
 void getDepthData(uint8_t *rgb) {
 	__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, "getDepthData ");
 	//lock this and make copy of the memory
-	pthread_mutex_lock(&gl_backbuf_mutex);
+	pthread_mutex_lock(&pth_backbuf_mutex);
 	if (got_new_frame) {
 		memcpy(rgb, depth_mid, 640 * 480 * 4 * sizeof(uint8_t));
 		got_new_frame = 0;
 	}
-	pthread_cond_signal(&gl_frame_cond);
-	pthread_mutex_unlock(&gl_backbuf_mutex);
+	pthread_cond_signal(&pth_frame_cond);
+	pthread_mutex_unlock(&pth_backbuf_mutex);
 }
 
 char* writeToFile(const char* path, uint8_t* buffer) {
@@ -150,10 +150,11 @@ char* writeToFile(const char* path, uint8_t* buffer) {
 	if (p == NULL) {
 		return "Error writing file";
 	}
+
 	int i = 0;
 	len = strlen((char*) buffer);
 	fprintf(p, "\n!--- new frame: \n");
-	for (i = 0; i < 500 && i < len; i++) {
+	for (i = 0; i < current_size_to_write && i < len; i++) {
 
 		fprintf(p, "  %d", buffer[i]);
 
@@ -169,8 +170,9 @@ void depth_cb(freenect_device *dev, void *v_depth, uint32_t timestamp) {
 	int i;
 
 	uint16_t *depth = (uint8_t*) v_depth;
+	sendMsgToJava(NULL, "New Depth Frame");
 
-	pthread_mutex_lock(&gl_backbuf_mutex);
+	pthread_mutex_lock(&pth_backbuf_mutex);
 	got_new_frame = 1;
 	unsigned char* depth_mid_ptr = depth_mid;
 	for (i = 0; i < 640 * 480; i++) {
@@ -178,15 +180,11 @@ void depth_cb(freenect_device *dev, void *v_depth, uint32_t timestamp) {
 		int lb = pval & 0xff;
 		switch (pval >> 8) {
 		case 0:
-			//should be more efficient then the old way way. (optimized for mobile!)
 			*depth_mid_ptr = 255;
 			*(depth_mid_ptr + 1) = 255 - lb;
 			*(depth_mid_ptr + 2) = 255 - lb;
 			*(depth_mid_ptr + 3) = 255;
 			depth_mid_ptr += 4;
-//				depth_mid[3*i+0] = 255;
-//				depth_mid[3*i+1] = 255-lb;
-//				depth_mid[3*i+2] = 255-lb;
 			break;
 		case 1:
 			*depth_mid_ptr = 255;
@@ -194,9 +192,6 @@ void depth_cb(freenect_device *dev, void *v_depth, uint32_t timestamp) {
 			*(depth_mid_ptr + 2) = 0;
 			*(depth_mid_ptr + 3) = 255;
 			depth_mid_ptr += 4;
-//				depth_mid[3*i+0] = 255;
-//				depth_mid[3*i+1] = lb;
-//				depth_mid[3*i+2] = 0;
 			break;
 		case 2:
 			*depth_mid_ptr = 255 - lb;
@@ -204,9 +199,6 @@ void depth_cb(freenect_device *dev, void *v_depth, uint32_t timestamp) {
 			*(depth_mid_ptr + 2) = 0;
 			*(depth_mid_ptr + 3) = 255;
 			depth_mid_ptr += 4;
-//				depth_mid[3*i+0] = 255-lb;
-//				depth_mid[3*i+1] = 255;
-//				depth_mid[3*i+2] = 0;
 			break;
 		case 3:
 			*depth_mid_ptr = 0;
@@ -214,9 +206,6 @@ void depth_cb(freenect_device *dev, void *v_depth, uint32_t timestamp) {
 			*(depth_mid_ptr + 2) = lb;
 			*(depth_mid_ptr + 3) = 255;
 			depth_mid_ptr += 4;
-//				depth_mid[3*i+0] = 0;
-//				depth_mid[3*i+1] = 255;
-//				depth_mid[3*i+2] = lb;
 			break;
 		case 4:
 			*depth_mid_ptr = 0;
@@ -224,9 +213,6 @@ void depth_cb(freenect_device *dev, void *v_depth, uint32_t timestamp) {
 			*(depth_mid_ptr + 2) = 255;
 			*(depth_mid_ptr + 3) = 255;
 			depth_mid_ptr += 4;
-//				depth_mid[3*i+0] = 0;
-//				depth_mid[3*i+1] = 255-lb;
-//				depth_mid[3*i+2] = 255;
 			break;
 		case 5:
 			*depth_mid_ptr = 0;
@@ -234,9 +220,6 @@ void depth_cb(freenect_device *dev, void *v_depth, uint32_t timestamp) {
 			*(depth_mid_ptr + 2) = 255 - lb;
 			*(depth_mid_ptr + 3) = 255;
 			depth_mid_ptr += 4;
-//				depth_mid[3*i+0] = 0;
-//				depth_mid[3*i+1] = 0;
-//				depth_mid[3*i+2] = 255-lb;
 			break;
 		default:
 			*depth_mid_ptr = 0;
@@ -244,29 +227,21 @@ void depth_cb(freenect_device *dev, void *v_depth, uint32_t timestamp) {
 			*(depth_mid_ptr + 2) = 0;
 			*(depth_mid_ptr + 3) = 255;
 			depth_mid_ptr += 4;
-//				depth_mid[3*i+0] = 0;
-//				depth_mid[3*i+1] = 0;
-//				depth_mid[3*i+2] = 0;
 			break;
 		}
 	}
-	//got_depth++;
 
-	pthread_cond_signal(&gl_frame_cond);
-	pthread_mutex_unlock(&gl_backbuf_mutex);
-
-//	sendByteArrayToJava(NULL, depth);
-//	sendMsgToJava(NULL, writeToFile("/mnt/temp.txt", ""));
+	pthread_cond_signal(&pth_frame_cond);
+	pthread_mutex_unlock(&pth_backbuf_mutex);
 }
 
 void rgb_cb(freenect_device *dev, void *rgb, uint32_t timestamp) {
-	__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, "rgb cb ");
 
-	//sendMsgToJava(NULL, "rgb callbeck was");
+	sendMsgToJava(NULL, "New RGB Frame");
+	if(need_write)
+		writeToFile(pathToFile, (uint8_t*) rgb);
 
-	sendMsgToJava(NULL, writeToFile(pathToFile, (uint8_t*) rgb));
-
-	pthread_mutex_lock(&gl_backbuf_mutex);
+	pthread_mutex_lock(&pth_backbuf_mutex);
 
 	// swap buffers
 	assert(rgb_back == rgb);
@@ -274,9 +249,8 @@ void rgb_cb(freenect_device *dev, void *rgb, uint32_t timestamp) {
 	freenect_set_video_buffer(dev, rgb_back);
 	rgb_mid = (uint8_t*) rgb;
 
-	//got_rgb++;
-	pthread_cond_signal(&gl_frame_cond);
-	pthread_mutex_unlock(&gl_backbuf_mutex);
+	pthread_cond_signal(&pth_frame_cond);
+	pthread_mutex_unlock(&pth_backbuf_mutex);
 
 }
 
@@ -285,7 +259,7 @@ void *freenect_threadfunc(void *env) {
 
 	int status = (*gJavaVM)->AttachCurrentThread(gJavaVM, &env, NULL);
 
-	freenect_set_tilt_degs(f_dev, freenect_angle);
+	freenect_set_tilt_degs(f_dev, current_tilt_angle);
 	freenect_set_led(f_dev, current_led_option);
 	freenect_set_depth_callback(f_dev, depth_cb);
 	freenect_set_video_callback(f_dev, rgb_cb);
@@ -301,39 +275,28 @@ void *freenect_threadfunc(void *env) {
 
 	int depthS = freenect_start_depth(f_dev);
 	int videoS = freenect_start_video(f_dev);
-	sleep(2);
 	__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG,
 			"Depth start = %d Video start = %d ", depthS, videoS);
 
-	//printf("'w'-tilt up, 's'-level, 'x'-tilt down, '0'-'6'-select LED mode, 'f'-video format\n");
-	//char buf[512];
-	__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, "Threaded...\n");
-	sendMsgToJava(env, "Threaded...\n");
-
-	int r = freenect_process_events(f_ctx);
-	sprintf(my_log, "freenect_process_events(f_ctx)= %d  ", r);
-
+	sprintf(my_log, "Depth start = %d Video start = %d ", depthS, videoS);
 	sendMsgToJava(env, my_log);
-//	sendMsgToJava(env,freenect_process_events(f_ctx));
-	__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG,
-			"freenect_process_events(f_ctx)= %d   ",
-			freenect_process_events(f_ctx));
+
+	__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, "Threaded...\n");
+	sendMsgToJava(env, "Threaded...");
 
 	while (!die && freenect_process_events(f_ctx) >= 0) {
 		//Throttle the text output
 		if (accelCount++ >= 2000) {
-			freenect_set_led(f_dev, current_led_option);
+
 			accelCount = 0;
-			freenect_raw_tilt_state* state;
-			freenect_update_tilt_state(f_dev);
-			state = freenect_get_tilt_state(f_dev);
-			double dx, dy, dz;
-			freenect_get_mks_accel(state, &dx, &dy, &dz);
-//			printf(
-//					"\r raw acceleration: %4d %4d %4d  mks acceleration: %4f %4f %4f",
-//					state->accelerometer_x, state->accelerometer_y,
-//					state->accelerometer_z, dx, dy, dz);
-//			fflush(stdout);
+//			freenect_raw_tilt_state* state;
+//			freenect_update_tilt_state(f_dev);
+//			state = freenect_get_tilt_state(f_dev);
+//			double dx, dy, dz;
+//			freenect_get_mks_accel(state, &dx, &dy, &dz);
+//
+			freenect_set_led(f_dev, current_led_option);
+			freenect_set_tilt_degs(f_dev, current_tilt_angle);
 		}
 
 		if (requested_format != current_format) {
@@ -347,8 +310,9 @@ void *freenect_threadfunc(void *env) {
 		}
 	}
 
-	__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG,
-			"\nshutting down streams...\n");
+	__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, "shutting down streams...");
+
+	int statusD = (*gJavaVM)->DetachCurrentThread(gJavaVM);
 
 	freenect_set_led(f_dev, LED_OFF);
 	freenect_stop_depth(f_dev);
@@ -361,18 +325,11 @@ void *freenect_threadfunc(void *env) {
 	return NULL;
 }
 
-extern struct libusb_context *usbi_default_context;
-
 jboolean openSync(JNIEnv* env) {
 	__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, "Start Sync");
-	sendMsgToJava(NULL, "Start Sync");
-
-	int r = libusb_init(usbi_default_context);
-	sprintf(my_log, "freenect_process_events(f_ctx)= %d  ", r);
-	sendMsgToJava(env, my_log);
+	sendMsgToJava(NULL, "Starting Sync...");
 
 	int res;
-//iinitialize variables
 	depth_mid = (uint8_t*) malloc(640 * 480 * 4);
 	depth_front = (uint8_t*) malloc(640 * 480 * 3);
 	rgb_back = (uint8_t*) malloc(640 * 480 * 3);
@@ -385,23 +342,23 @@ jboolean openSync(JNIEnv* env) {
 		v = powf(v, 3) * 6;
 		t_gamma[i] = v * 6 * 256;
 	}
-//init  kinect context
+	//init  kinect context
 	if (freenect_init(&f_ctx, NULL) < 0) {
 		__android_log_print(ANDROID_LOG_ERROR, LOG_TAG,
 				"Kinect open sync failed\n");
 		sendMsgToJava(env, "Kinect open sync failed");
 		return FALSE;
 	}
-//settup
+	//settup
 	freenect_set_log_level(f_ctx, FREENECT_LOG_DEBUG);
 	freenect_select_subdevices(
 			f_ctx,
 			(freenect_device_flags) (FREENECT_DEVICE_MOTOR
 					| FREENECT_DEVICE_CAMERA));
-//get num dev
+	//get num dev
 	int nr_devices = freenect_num_devices(f_ctx);
 
-	sprintf(my_log, "Number Devices found %d\n", nr_devices);
+	sprintf(my_log, "Number of Devices found %d\n", nr_devices);
 	sendMsgToJava(env, my_log);
 	__android_log_print(ANDROID_LOG_INFO, LOG_TAG, my_log);
 
@@ -433,7 +390,6 @@ void makeGlobalRef(JNIEnv *env, jobject *obj) {
 		(*env)->DeleteLocalRef(env, *obj);
 		*obj = globalRef;
 	}
-
 }
 
 void deleteGlobalRef(JNIEnv *env, jobject *obj) {
@@ -493,16 +449,14 @@ jboolean initializeWorker(JNIEnv *env, jobject *javaFront, JavaVM* gJava) {
 }
 
 void finalizeWorker(JNIEnv *env, jobject *javaFront) {
-
+	sendMsgToJava(env, "finalizing native part and kinect threads...");
 	die = 1;
-//	deleteGlobalRef(env, &mJavaFront);
-//	deleteGlobalRef(env, &mClassCaller);
-	//freenect_shutdown(&f_ctx);
+	deleteGlobalRef(env, &mJavaFront);
+	deleteGlobalRef(env, &mClassCaller);
 	__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, "framework cleanup");
 }
 
 jboolean turnLedRed() {
-
 	__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, "turnLedRed");
 	current_led_option = LED_RED;
 	return TRUE;
@@ -514,8 +468,29 @@ jboolean turnLedGreen() {
 	return TRUE;
 }
 
+void titlDown() {
+	__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, "turnLedRed");
+	if (current_tilt_angle > -27) {
+		current_tilt_angle--;
+	}
+}
+
+void tiltUP() {
+	if (current_tilt_angle < 27) {
+		current_tilt_angle++;
+	}
+}
+
+void setSizeToWrite(jint size) {
+	current_size_to_write = (int) size;
+}
+
 void setPathToFile(JNIEnv* env, jstring cpath) {
 	pathToFile = (*env)->GetStringUTFChars(env, cpath, NULL);
-	sprintf(my_log, "JNI get file path =  %c  ", pathToFile);
+	sprintf(my_log, "JNI get file path =  %s  ", pathToFile);
 	sendMsgToJava(env, my_log);
+}
+
+void setFileWritable(jint writable){
+	need_write = (int) writable;
 }

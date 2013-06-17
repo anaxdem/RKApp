@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list
+  xmlns:android="http://schemas.android.com/apk/res/android">
+  <item>
+  <!-- подложка -->
+  	<!-- red -->
+  	<shape   
+  	
+  		android:shape="rectangle">            
+  	<gradient 
+    	android:startColor="#99730000" 
+        android:centerColor="#ff730000"              
+        android:endColor="#99730000"
+	    android:type="linear"
+	    android:angle="90"/>
+    <padding 
+    	android:bottom="1dp"
+		android:left="2dp"
+	    android:top="2dp"
+	    android:right="2dp"/>
+    <corners 
+    	android:radius="6dp"/>             
+    </shape>
+  </item>    
+     
+  <item>   
+  	<shape   
+    	android:shape="rectangle"> 
+    <gradient 
+    	android:startColor="#FF1a1a1a"              
+        android:endColor="#FF341212"
+	    android:type="linear"
+	    android:angle="90"/>   
+	<padding 
+		android:bottom="2px" 
+		android:left="2px"
+		android:top="2px" 
+		android:right="2px" />
+	<corners 
+		android:radius="2dp"/>        
+    </shape>
+  </item>
+   
+   <!-- white -->
+  <item>
+  	<shape   
+      	android:shape="rectangle">            
+    <gradient 
+		android:startColor="#880a0a0a"                
+        android:endColor="#AAb5b5b5"
+	    android:type="linear"
+	    android:angle="90"/>           
+    <padding 
+    	android:bottom="0dp" 
+		android:left="1dp" 
+		android:top="3px"
+		android:right="1px" />
+    <corners 
+    	android:radius="2dp"/> 
+         
+    </shape>
+  </item>
+   
+   <!-- основная фигура -->
+  <item>
+  	<shape 
+    	android:shape="rectangle">           
+    <corners 
+    	android:radius="2dp"/> 
+         
+    <gradient 
+		android:startColor="#FF000000" 		
+		android:endColor="#ff5b5b5b"
+		android:angle="90"
+		android:type="linear"
+		android:centerX="0.4"
+		android:centerY="0.4"/>	            
+    </shape>
+  </item>
+ </layer-list>

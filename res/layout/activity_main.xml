@@ -4,54 +4,152 @@
     android:layout_height="match_parent"
     tools:context=".RKAppActivity" >
 
-    <ToggleButton
-        android:id="@+id/tglLed"
-        android:layout_width="50dip"
-        android:layout_height="50dip"
+    <RelativeLayout
+        android:id="@+id/control_panel"
+        android:layout_width="250dip"
+        android:layout_height="match_parent"
         android:layout_alignParentBottom="true"
-        android:layout_alignParentRight="true"
-        android:layout_margin="15dip"
-        android:background="@drawable/color_led_selector"
-        android:text=""
-        android:textOff=""
-        android:textOn="" />
-
-    <Button
-        android:id="@+id/btn_sync_device"
-        style="@style/Button"
-        android:layout_width="200dip"
-        android:layout_height="50dip"
-        android:layout_alignParentBottom="true"
-        android:layout_margin="15dip"
-        android:layout_toLeftOf="@+id/tglLed"
-        android:text="Sync Device" />
-
-    <Button
-        android:id="@+id/btn_stop_device"
-        style="@style/Button"
-        android:layout_width="200dip"
-        android:layout_height="50dip"
-        android:layout_alignParentBottom="true"
-        android:layout_margin="15dip"
-        android:layout_toLeftOf="@+id/btn_sync_device"
-        android:text="Stop Device" />
-
-    <EditText
-        android:id="@+id/edit"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_above="@+id/tglLed"
-        android:layout_alignParentLeft="true"
         android:layout_alignParentRight="true"
         android:layout_alignParentTop="true"
+        android:background="@drawable/bg_log"
+        android:orientation="vertical" >
+
+        <Button
+            android:id="@+id/btn_sync_device"
+            style="@style/Button"
+            android:layout_width="200dip"
+            android:layout_height="50dip"
+            android:layout_alignParentTop="true"
+            android:layout_centerHorizontal="true"
+            android:layout_margin="15dip"
+            android:text="Sync Device" 
+            />
+
+        <Button
+            android:id="@+id/btn_stop_device"
+            style="@style/Button"
+            android:layout_width="200dip"
+            android:layout_height="50dip"
+            android:layout_below="@+id/btn_sync_device"
+            android:layout_centerHorizontal="true"
+            android:layout_margin="15dip"
+            android:text="Stop Device" />
+
+        <ToggleButton
+            android:id="@+id/tglLed"
+            android:layout_width="50dip"
+            android:layout_height="50dip"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentRight="true"
+            android:layout_margin="15dip"
+            android:background="@drawable/color_led_selector"
+            android:text="Led"
+            android:textColor="#fff"
+            android:textOff=""
+            android:textOn="" />
+
+        <ToggleButton
+            android:id="@+id/chb_writable"
+            android:layout_width="50dip"
+            android:layout_height="50dip"
+            android:layout_alignParentBottom="true"
+            android:layout_margin="15dip"
+            android:background="@drawable/tgl_write_selector"
+            android:checked="true"
+            android:textColor="#fff"
+            android:textOff=""
+            android:textOn="" />
+
+        <Button
+            android:id="@+id/btn_tilt_up"
+            android:layout_width="50dip"
+            android:layout_height="50dip"
+            android:layout_alignParentLeft="true"
+            android:layout_below="@+id/btn_stop_device"
+            android:layout_marginLeft="15dip"
+            android:layout_marginRight="15dip"
+            android:layout_marginTop="15dip"
+            android:background="@drawable/btn_tilt_up_selector" />
+
+        <Button
+            android:id="@+id/btn_tilt_down"
+            android:layout_width="50dip"
+            android:layout_height="50dip"
+            android:layout_alignParentLeft="true"
+            android:layout_below="@+id/btn_tilt_up"
+            android:layout_marginBottom="15dip"
+            android:layout_marginLeft="15dip"
+            android:layout_marginRight="15dip"
+            android:background="@drawable/btn_tilt_down_selector" />
+
+        <TextView
+            android:id="@+id/textView1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignBaseline="@+id/btn_tilt_up"
+            android:layout_alignBottom="@+id/btn_tilt_up"
+            android:layout_toRightOf="@+id/btn_tilt_up"
+            android:text="Kinect Tilt Up"
+            android:textColor="#fff"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/textView2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignBaseline="@+id/btn_tilt_down"
+            android:layout_alignBottom="@+id/btn_tilt_down"
+            android:layout_alignLeft="@+id/textView1"
+            android:text="Kinect Tilt Down"
+            android:textColor="#fff"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/edit_write_buffer"
+            android:layout_width="200dip"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/btn_tilt_down"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="67dp"
+            android:inputType="number"
+            android:text="500" />
+
+        <TextView
+            android:id="@+id/textView3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignRight="@+id/edit_write_buffer"
+            android:layout_centerVertical="true"
+            android:text="Change write buffer size "
+            android:textColor="#fff"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/btn_set_writable"
+            style="@style/Button"
+            android:layout_width="200dip"
+            android:layout_height="50dip"
+            android:layout_marginBottom="15dip"
+            android:layout_below="@+id/edit_write_buffer"
+            android:layout_centerHorizontal="true"
+            android:text="Set" />
+    </RelativeLayout>
+
+    <EditText
+        android:id="@+id/log"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:layout_toLeftOf="@+id/control_panel"
+        android:background="@drawable/bg_log"
         android:editable="false"
         android:ems="10"
-        android:fadeScrollbars="true"
+        android:fadeScrollbars="false"
         android:gravity="top"
-        android:textColor="#000"
-        android:textSize="12sp" >
-
-        <requestFocus />
+        android:textColor="#fff"
+        android:textSize="15sp" >
     </EditText>
 
 </RelativeLayout>

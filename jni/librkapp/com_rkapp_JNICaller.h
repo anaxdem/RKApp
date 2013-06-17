@@ -7,53 +7,69 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+/*
+ * Class:     com_rkapp_JNICaller
+ * Method:    initialize
+ * Signature: ()Z
+ */JNIEXPORT jboolean JNICALL Java_com_rkapp_JNICaller_initializeWorker(JNIEnv *,
+		jobject);
+/*
+ * Class:     com_rkapp_JNICaller
+ * Method:    finalize
+ * Signature: ()V
+ */JNIEXPORT void JNICALL Java_com_rkapp_JNICaller_finalizeWorker(JNIEnv *,
+		jobject);
+/*
+ * Class:     com_rkapp_JNICaller
+ * Method:    openSync
+ * Signature: ()Z
+ */JNIEXPORT jboolean JNICALL Java_com_rkapp_JNICaller_openSync(JNIEnv *,
+		jobject);
+/*
+ * Class:     com_rkapp_JNICaller
+ * Method:    turnLedRed
+ * Signature: ()Z
+ */JNIEXPORT jboolean JNICALL Java_com_rkapp_JNICaller_turnLedRed(JNIEnv *,
+		jobject);
+/*
+ * Class:     com_rkapp_JNICaller
+ * Method:    turnLedGreen
+ * Signature: ()Z
+ */JNIEXPORT jboolean JNICALL Java_com_rkapp_JNICaller_turnLedGreen(JNIEnv *,
+		jobject);
 
-	/*
-	 * Class:     com_rkapp_JNICaller
-	 * Method:    initialize
-	 * Signature: ()Z
-	 */
-	JNIEXPORT jboolean JNICALL Java_com_rkapp_JNICaller_initializeWorker
-	(JNIEnv *, jobject);
-	/*
-	 * Class:     com_rkapp_JNICaller
-	 * Method:    finalize
-	 * Signature: ()V
-	 */
-	JNIEXPORT void JNICALL Java_com_rkapp_JNICaller_finalizeWorker
-	(JNIEnv *, jobject);
+/*
+ * Class:     com_rkapp_JNICaller
+ * Method:    setFilePath
+ * Signature: (Ljava/lang/String;)V
+ */JNIEXPORT void JNICALL Java_com_rkapp_JNICaller_setFilePath(JNIEnv *, jobject,
+		jstring);
 
-	/*
-	 * Class:     com_rkapp_JNICaller
-	 * Method:    openSync
-	 * Signature: ()Z
-	 */
-	JNIEXPORT jboolean JNICALL Java_com_rkapp_JNICaller_openSync
-	(JNIEnv *, jobject);
+/*
+ * Class:     com_rkapp_JNICaller
+ * Method:    titlDown
+ * Signature: ()V
+ */JNIEXPORT void JNICALL Java_com_rkapp_JNICaller_titlDown(JNIEnv *, jobject);
 
-	/*
-	 * Class:     com_rkapp_JNICaller
-	 * Method:    turnLedRed
-	 * Signature: ()Z
-	 */
-	JNIEXPORT jboolean JNICALL Java_com_rkapp_JNICaller_turnLedRed
-	(JNIEnv *, jobject);
+/*
+ * Class:     com_rkapp_JNICaller
+ * Method:    tiltUP
+ * Signature: ()V
+ */JNIEXPORT void JNICALL Java_com_rkapp_JNICaller_tiltUP(JNIEnv *, jobject);
 
-	/*
-	 * Class:     com_rkapp_JNICaller
-	 * Method:    turnLedGreen
-	 * Signature: ()Z
-	 */
-	JNIEXPORT jboolean JNICALL Java_com_rkapp_JNICaller_turnLedGreen
-	(JNIEnv *, jobject);
+/*
+ * Class:     com_rkapp_JNICaller
+ * Method:    setSizeToWrite
+ * Signature: (I)V
+ */JNIEXPORT void JNICALL Java_com_rkapp_JNICaller_setSizeToWrite(JNIEnv *,
+		jobject, jint);
 
-	/*
-	 * Class:     com_rkapp_JNICaller
-	 * Method:    setFilePath
-	 * Signature: (Ljava/lang/String;)V
-	 */
-	JNIEXPORT void JNICALL Java_com_rkapp_JNICaller_setFilePath
-	(JNIEnv *, jobject, jstring);
+/*
+ * Class:     com_rkapp_JNICaller
+ * Method:    setFileWritable
+ * Signature: (I)V
+ */JNIEXPORT void JNICALL Java_com_rkapp_JNICaller_setFileWritable(JNIEnv *,
+		jobject, jint);
 
 #ifdef __cplusplus
 }
