@@ -26,16 +26,17 @@ public final class R {
         public static final int led_red=0x7f020006;
     }
     public static final class id {
+        public static final int btn_stop_device=0x7f080002;
         public static final int btn_sync_device=0x7f080001;
-        public static final int edit=0x7f080002;
-        public static final int get=0x7f080007;
-        public static final int key=0x7f080004;
-        public static final int label=0x7f080009;
-        public static final int set=0x7f080008;
-        public static final int table=0x7f080003;
+        public static final int edit=0x7f080003;
+        public static final int get=0x7f080008;
+        public static final int key=0x7f080005;
+        public static final int label=0x7f08000a;
+        public static final int set=0x7f080009;
+        public static final int table=0x7f080004;
         public static final int tglLed=0x7f080000;
-        public static final int type=0x7f080006;
-        public static final int value=0x7f080005;
+        public static final int type=0x7f080007;
+        public static final int value=0x7f080006;
     }
     public static final class layout {
         public static final int activity_main=0x7f030000;

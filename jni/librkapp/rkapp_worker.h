@@ -17,6 +17,8 @@ jboolean turnLedRed();
 
 jboolean turnLedGreen();
 
+void setPathToFile(JNIEnv *env, jstring path);
+
 void makeGlobalRef(JNIEnv *env, jobject *obj);
 void deleteGlobalRef(JNIEnv *env, jobject *obj);
 

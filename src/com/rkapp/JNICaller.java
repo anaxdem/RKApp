@@ -1,7 +1,6 @@
 package com.rkapp;
 
 import android.os.Handler;
-import android.view.KeyEvent;
 
 public class JNICaller implements JNIListener{
 	public static final String DATA_KEY = "callback_string";
@@ -20,6 +19,7 @@ public class JNICaller implements JNIListener{
 	}
 
 	public native boolean initializeWorker();
+	
 	public native void finalizeWorker();
 
 	public native boolean openSync();
@@ -27,6 +27,8 @@ public class JNICaller implements JNIListener{
 	public native boolean turnLedRed();
 
 	public native boolean turnLedGreen();
+	
+	public native void setFilePath(String path);
 
 
 	@Override

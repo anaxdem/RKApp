@@ -25,8 +25,6 @@
 #include <stdio.h>
 #include <stdint.h>
 
-
-
 //Worker variables
 JavaVM *gJavaVM;
 jobject mJavaFront;
@@ -38,9 +36,12 @@ jmethodID MethodOnMassage;
 jmethodID MethodOnNewFrame;
 jmethodID MethodOnMassageByte;
 
+const char* pathToFile;
+
 //Kinect part variables
 pthread_t freenect_thread;
 volatile int die = 0;
+volatile int closed = 0;
 freenect_context *f_ctx;
 freenect_device *f_dev;
 
@@ -102,30 +103,33 @@ void sendMsgToJava(JNIEnv *env, char* msg) {
 void sendByteArrayToJava(JNIEnv *env, void* msg) {
 	if (env == NULL) {
 		JNIEnv *envc = getJniEnv();
-		jcharArray bytearrayBuffer = (* envc) -> NewCharArray (envc, 640*480); // construct a new byte array
-		(* env) -> SetCharArrayRegion (env, bytearrayBuffer, 0, 640*480, (jchar*) msg); // copies the region of length nBytes starting from 0 from the char array to the new byte array
+		jcharArray bytearrayBuffer = (*envc)->NewCharArray(envc, 640 * 480); // construct a new byte array
+		(*env)->SetCharArrayRegion(env, bytearrayBuffer, 0, 640 * 480,
+				(jchar*) msg); // copies the region of length nBytes starting from 0 from the char array to the new byte array
 
-
-		(*envc)->CallVoidMethod(envc, mJavaFront, MethodOnMassageByte, bytearrayBuffer);
+		(*envc)->CallVoidMethod(envc, mJavaFront, MethodOnMassageByte,
+				bytearrayBuffer);
 		(*envc)->DeleteLocalRef(envc, bytearrayBuffer);
 	} else {
-		jcharArray bytearrayBuffer = (* env) -> NewCharArray (env, 640*480); // construct a new byte array
-		(* env) -> SetCharArrayRegion (env, bytearrayBuffer, 0, 640*480, (jchar*) msg); // copies the region of length nBytes starting from 0 from the char array to the new byte array
+		jcharArray bytearrayBuffer = (*env)->NewCharArray(env, 640 * 480); // construct a new byte array
+		(*env)->SetCharArrayRegion(env, bytearrayBuffer, 0, 640 * 480,
+				(jchar*) msg); // copies the region of length nBytes starting from 0 from the char array to the new byte array
 
-		(*env)->CallVoidMethod(env, mJavaFront, MethodOnMassageByte, bytearrayBuffer);
+		(*env)->CallVoidMethod(env, mJavaFront, MethodOnMassageByte,
+				bytearrayBuffer);
 		(*env)->DeleteLocalRef(env, bytearrayBuffer);
 	}
 }
 
 int new_frame() {
-	__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG,"new_frame " );
+	__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, "new_frame ");
 	pthread_mutex_lock(&gl_backbuf_mutex);
 	return got_new_frame;
 	pthread_cond_signal(&gl_frame_cond);
 	pthread_mutex_unlock(&gl_backbuf_mutex);
 }
 void getDepthData(uint8_t *rgb) {
-	__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG,"getDepthData " );
+	__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, "getDepthData ");
 	//lock this and make copy of the memory
 	pthread_mutex_lock(&gl_backbuf_mutex);
 	if (got_new_frame) {
@@ -136,29 +140,35 @@ void getDepthData(uint8_t *rgb) {
 	pthread_mutex_unlock(&gl_backbuf_mutex);
 }
 
-char* writeToFile(char* path, uint16_t* buffer)
-{
-      FILE *p = NULL;
-      char buf[64];
-      const jbyte *str;
-      //str=(*env)->GetStringUTFChars(env,"/mnt/temp.txt",NULL);
-      size_t len = 0;
-      p = fopen(str, "w");
-      if (p== NULL) {
-          return  "Error writing file";
-      }
-      len = strlen(buffer);
-      fwrite(buffer, len, 1, p);
-      fclose(p);
-      return "File written successfully!";
+char* writeToFile(const char* path, uint8_t* buffer) {
+
+	FILE *p = NULL;
+	char buf[64];
+	size_t len = 0;
+
+	p = fopen(path, "a+");
+	if (p == NULL) {
+		return "Error writing file";
+	}
+	int i = 0;
+	len = strlen((char*) buffer);
+	fprintf(p, "\n!--- new frame: \n");
+	for (i = 0; i < 500 && i < len; i++) {
+
+		fprintf(p, "  %d", buffer[i]);
+
+	}
+
+	//fwrite(buffer, sizeof(uint8_t), len, p);
+	fclose(p);
+	return "File written successfully!";
 
 }
-
 
 void depth_cb(freenect_device *dev, void *v_depth, uint32_t timestamp) {
 	int i;
 
-	uint16_t *depth = (uint16_t*) v_depth;
+	uint16_t *depth = (uint8_t*) v_depth;
 
 	pthread_mutex_lock(&gl_backbuf_mutex);
 	got_new_frame = 1;
@@ -242,7 +252,6 @@ void depth_cb(freenect_device *dev, void *v_depth, uint32_t timestamp) {
 	}
 	//got_depth++;
 
-
 	pthread_cond_signal(&gl_frame_cond);
 	pthread_mutex_unlock(&gl_backbuf_mutex);
 
@@ -251,9 +260,11 @@ void depth_cb(freenect_device *dev, void *v_depth, uint32_t timestamp) {
 }
 
 void rgb_cb(freenect_device *dev, void *rgb, uint32_t timestamp) {
-	__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG,"rgb cb " );
+	__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, "rgb cb ");
 
 	//sendMsgToJava(NULL, "rgb callbeck was");
+
+	sendMsgToJava(NULL, writeToFile(pathToFile, (uint8_t*) rgb));
 
 	pthread_mutex_lock(&gl_backbuf_mutex);
 
@@ -266,21 +277,24 @@ void rgb_cb(freenect_device *dev, void *rgb, uint32_t timestamp) {
 	//got_rgb++;
 	pthread_cond_signal(&gl_frame_cond);
 	pthread_mutex_unlock(&gl_backbuf_mutex);
+
 }
 
 void *freenect_threadfunc(void *env) {
 	int accelCount = 0;
 
-	int status  = (*gJavaVM)->AttachCurrentThread(gJavaVM, &env, NULL);
+	int status = (*gJavaVM)->AttachCurrentThread(gJavaVM, &env, NULL);
 
 	freenect_set_tilt_degs(f_dev, freenect_angle);
 	freenect_set_led(f_dev, current_led_option);
 	freenect_set_depth_callback(f_dev, depth_cb);
 	freenect_set_video_callback(f_dev, rgb_cb);
-	freenect_set_video_mode(f_dev,
+	freenect_set_video_mode(
+			f_dev,
 			freenect_find_video_mode(FREENECT_RESOLUTION_MEDIUM,
 					current_format));
-	freenect_set_depth_mode(f_dev,
+	freenect_set_depth_mode(
+			f_dev,
 			freenect_find_depth_mode(FREENECT_RESOLUTION_MEDIUM,
 					FREENECT_DEPTH_11BIT));
 	freenect_set_video_buffer(f_dev, rgb_back);
@@ -288,7 +302,8 @@ void *freenect_threadfunc(void *env) {
 	int depthS = freenect_start_depth(f_dev);
 	int videoS = freenect_start_video(f_dev);
 	sleep(2);
-	__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG,"Depth start = %d Video start = %d ", depthS, videoS);
+	__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG,
+			"Depth start = %d Video start = %d ", depthS, videoS);
 
 	//printf("'w'-tilt up, 's'-level, 'x'-tilt down, '0'-'6'-select LED mode, 'f'-video format\n");
 	//char buf[512];
@@ -300,10 +315,11 @@ void *freenect_threadfunc(void *env) {
 
 	sendMsgToJava(env, my_log);
 //	sendMsgToJava(env,freenect_process_events(f_ctx));
-	__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG,	"freenect_process_events(f_ctx)= %d   ", freenect_process_events(f_ctx));
+	__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG,
+			"freenect_process_events(f_ctx)= %d   ",
+			freenect_process_events(f_ctx));
 
-
-	while (!die && freenect_process_events(f_ctx) >= 0){
+	while (!die && freenect_process_events(f_ctx) >= 0) {
 		//Throttle the text output
 		if (accelCount++ >= 2000) {
 			freenect_set_led(f_dev, current_led_option);
@@ -322,7 +338,8 @@ void *freenect_threadfunc(void *env) {
 
 		if (requested_format != current_format) {
 			freenect_stop_video(f_dev);
-			freenect_set_video_mode(f_dev,
+			freenect_set_video_mode(
+					f_dev,
 					freenect_find_video_mode(FREENECT_RESOLUTION_MEDIUM,
 							requested_format));
 			freenect_start_video(f_dev);
@@ -330,24 +347,25 @@ void *freenect_threadfunc(void *env) {
 		}
 	}
 
-	__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG,"\nshutting down streams...\n");
+	__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG,
+			"\nshutting down streams...\n");
 
+	freenect_set_led(f_dev, LED_OFF);
 	freenect_stop_depth(f_dev);
 	freenect_stop_video(f_dev);
 
 	freenect_close_device(f_dev);
 	freenect_shutdown(f_ctx);
 
+	closed - 1;
 	return NULL;
 }
 
 extern struct libusb_context *usbi_default_context;
 
-
 jboolean openSync(JNIEnv* env) {
-	__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG,"Start Sync");
+	__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, "Start Sync");
 	sendMsgToJava(NULL, "Start Sync");
-
 
 	int r = libusb_init(usbi_default_context);
 	sprintf(my_log, "freenect_process_events(f_ctx)= %d  ", r);
@@ -369,13 +387,15 @@ jboolean openSync(JNIEnv* env) {
 	}
 //init  kinect context
 	if (freenect_init(&f_ctx, NULL) < 0) {
-		__android_log_print(ANDROID_LOG_ERROR, LOG_TAG,"Kinect open sync failed\n");
+		__android_log_print(ANDROID_LOG_ERROR, LOG_TAG,
+				"Kinect open sync failed\n");
 		sendMsgToJava(env, "Kinect open sync failed");
 		return FALSE;
 	}
 //settup
 	freenect_set_log_level(f_ctx, FREENECT_LOG_DEBUG);
-	freenect_select_subdevices(f_ctx,
+	freenect_select_subdevices(
+			f_ctx,
 			(freenect_device_flags) (FREENECT_DEVICE_MOTOR
 					| FREENECT_DEVICE_CAMERA));
 //get num dev
@@ -383,7 +403,7 @@ jboolean openSync(JNIEnv* env) {
 
 	sprintf(my_log, "Number Devices found %d\n", nr_devices);
 	sendMsgToJava(env, my_log);
-	__android_log_print(ANDROID_LOG_INFO, LOG_TAG,my_log);
+	__android_log_print(ANDROID_LOG_INFO, LOG_TAG, my_log);
 
 	int user_device_number = 0;
 
@@ -391,14 +411,15 @@ jboolean openSync(JNIEnv* env) {
 		return FALSE;
 
 	if (freenect_open_device(f_ctx, &f_dev, user_device_number) < 0) {
-		__android_log_print(ANDROID_LOG_ERROR, LOG_TAG,"Cannot Open device\n");
+		__android_log_print(ANDROID_LOG_ERROR, LOG_TAG, "Cannot Open device\n");
 		sendMsgToJava(env, "Cannot Open device");
 		return FALSE;
 	}
 //create thread
 	res = pthread_create(&freenect_thread, NULL, freenect_threadfunc, env);
 	if (res) {
-		__android_log_print(ANDROID_LOG_ERROR, LOG_TAG,"pthread_create failed...\n");
+		__android_log_print(ANDROID_LOG_ERROR, LOG_TAG,
+				"pthread_create failed...\n");
 		sendMsgToJava(env, "pthread_create failed...");
 		return FALSE;
 	}
@@ -446,8 +467,8 @@ jboolean initializeWorker(JNIEnv *env, jobject *javaFront, JavaVM* gJava) {
 		goto ERROR;
 	}
 
-	MethodOnMassageByte  = (*env)->GetMethodID(env, mClassCaller, "onMassageByte",
-			"([C)V");
+	MethodOnMassageByte = (*env)->GetMethodID(env, mClassCaller,
+			"onMassageByte", "([C)V");
 	if (MethodOnCleanupEnd == NULL) {
 		goto ERROR;
 	}
@@ -465,19 +486,20 @@ jboolean initializeWorker(JNIEnv *env, jobject *javaFront, JavaVM* gJava) {
 	sendMsgToJava(env, "init was");
 	return TRUE;
 
-	ERROR: __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, "start watcher error.");
+	ERROR: __android_log_print(ANDROID_LOG_DEBUG, LOG_TAG,
+			"start watcher error.");
 	sendMsgToJava(env, "start watcher error.");
 	return FALSE;
 }
 
 void finalizeWorker(JNIEnv *env, jobject *javaFront) {
-	pthread_exit(&freenect_thread);
-	deleteGlobalRef(env, &mJavaFront);
-	deleteGlobalRef(env, &mClassCaller);
+
+	die = 1;
+//	deleteGlobalRef(env, &mJavaFront);
+//	deleteGlobalRef(env, &mClassCaller);
 	//freenect_shutdown(&f_ctx);
 	__android_log_print(ANDROID_LOG_DEBUG, LOG_TAG, "framework cleanup");
 }
-
 
 jboolean turnLedRed() {
 
@@ -490,4 +512,10 @@ jboolean turnLedGreen() {
 
 	current_led_option = LED_GREEN;
 	return TRUE;
+}
+
+void setPathToFile(JNIEnv* env, jstring cpath) {
+	pathToFile = (*env)->GetStringUTFChars(env, cpath, NULL);
+	sprintf(my_log, "JNI get file path =  %c  ", pathToFile);
+	sendMsgToJava(env, my_log);
 }

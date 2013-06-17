@@ -40,3 +40,9 @@ JNIEXPORT jboolean JNICALL Java_com_rkapp_JNICaller_turnLedGreen(JNIEnv *env,
 	return turnLedGreen();
 }
 
+JNIEXPORT void JNICALL Java_com_rkapp_JNICaller_setFilePath(JNIEnv *env,
+		jobject this, jstring path) {
+
+	setPathToFile(env, path);
+}
+

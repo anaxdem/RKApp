@@ -47,6 +47,14 @@ extern "C" {
 	JNIEXPORT jboolean JNICALL Java_com_rkapp_JNICaller_turnLedGreen
 	(JNIEnv *, jobject);
 
+	/*
+	 * Class:     com_rkapp_JNICaller
+	 * Method:    setFilePath
+	 * Signature: (Ljava/lang/String;)V
+	 */
+	JNIEXPORT void JNICALL Java_com_rkapp_JNICaller_setFilePath
+	(JNIEnv *, jobject, jstring);
+
 #ifdef __cplusplus
 }
 #endif
